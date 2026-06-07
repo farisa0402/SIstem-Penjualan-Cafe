@@ -50,7 +50,7 @@ export default function LupaSandi() {
             email,
             {
               redirectTo:
-                "https://sistem-penjualan-cafe.vercel.app/UbahSandi",
+                "https://sistem-penjualan-cafee.vercel.app/UbahSandi",
             }
           );
 

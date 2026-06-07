@@ -29,7 +29,7 @@ function App() {
     <Route path="menu" element={<Menu />}/>
     <Route path="tambah-menu" element={<TambahMenu />}/>
     <Route path="stok" element={<Stok />}/>
-    <Route path="ubah-menu" element={<UbahMenu />}/>
+    <Route path="ubah-menu/:id" element={<UbahMenu />} />
     <Route path="tambah-stok" element={<TambahStok />}/>
     <Route path="ubah-stok" element={<UbahStok />}/>
     <Route path="detail-riwayat" element={<DetailRiwayat />}/>

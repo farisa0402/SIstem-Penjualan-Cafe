@@ -16,7 +16,7 @@ import UbahStok from "./pages/UbahStok";
 function App() {
   return (
    <Routes>
-   <Route path="/landingpage" element={<LandingPage />}/>
+   <Route path="/" element={<LandingPage />}/>
    <Route path="/login" element={<Login />}/>
    <Route path="/lupasandi" element={<LupaSandi />}/>
    <Route path="/dashboard" element={<MainLayout />}>

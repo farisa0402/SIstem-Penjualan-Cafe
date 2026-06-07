@@ -273,22 +273,15 @@ export default function UbahMenu() {
                     Rp
                   </span>
                   <input
-                    type="number"
-                    min="0"
-                    value={hargaMakanan}
-                    onChange={(e) => setHargaMakanan(e.target.value)}
-                    required={kategori === "1"}
-                    className="
-                      border
-                      border-gray-300
-                      h-[38px]
-                      w-full
-                      pl-10
-                      pr-3
-                      outline-none
-                      text-sm
-                    "
-                  />
+                  type="text"
+                  value={hargaMakanan}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, "");
+                    setHargaMakanan(value);
+                  }}
+                  required
+                  className="border border-gray-300 h-[38px] w-full pl-10 pr-3 outline-none text-sm"
+                />
                 </div>
               </div>
             )}
@@ -307,21 +300,14 @@ export default function UbahMenu() {
                       Rp
                     </span>
                     <input
-                      type="number"
-                      min="0"
+                      type="text"
                       value={hargaPanas}
-                      onChange={(e) => setHargaPanas(e.target.value)}
-                      required={kategori === "2"}
-                      className="
-                        border
-                        border-gray-300
-                        h-[38px]
-                        w-full
-                        pl-10
-                        pr-3
-                        outline-none
-                        text-sm
-                      "
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, "");
+                        setHargaPanas(value);
+                      }}
+                      required
+                      className="border border-gray-300 h-[38px] w-full pl-10 pr-3 outline-none text-sm"
                     />
                   </div>
 
@@ -331,22 +317,15 @@ export default function UbahMenu() {
                       Rp
                     </span>
                     <input
-                      type="number"
-                      min="0"
-                      value={hargaDingin}
-                      onChange={(e) => setHargaDingin(e.target.value)}
-                      required={kategori === "2"}
-                      className="
-                        border
-                        border-gray-300
-                        h-[38px]
-                        w-full
-                        pl-10
-                        pr-3
-                        outline-none
-                        text-sm
-                      "
-                    />
+                    type="text"
+                    value={hargaDingin}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      setHargaDingin(value);
+                    }}
+                    required
+                    className="border border-gray-300 h-[38px] w-full pl-10 pr-3 outline-none text-sm"
+                  />
                   </div>
                 </div>
               </div>

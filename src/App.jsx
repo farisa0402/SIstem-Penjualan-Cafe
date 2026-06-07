@@ -22,7 +22,7 @@ function App() {
    <Route path="/" element={<LandingPage />}/>
    <Route path="/login" element={<Login />}/>
    <Route path="/lupasandi" element={<LupaSandi />}/>
-   <Route path="UbahSandi" element={<UbahSandi />}/>
+   <Route path="/UbahSandi" element={<UbahSandi />}/>
    <Route path="/dashboard" element={<MainLayout />}>
     <Route index element={<Dashboard />}/>
     <Route path="transaksi" element={<Transaksi />}/>

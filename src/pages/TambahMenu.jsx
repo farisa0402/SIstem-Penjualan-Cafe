@@ -141,11 +141,12 @@ export default function TambahMenu() {
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">Rp</span>
                   <input
-                    type="number"
-                    min="0"
+                    type="text"
                     value={hargaMakanan}
-                    onChange={(e) => setHargaMakanan(e.target.value < 0 ? 0 : e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "-") e.preventDefault(); }}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      setHargaMakanan(value);
+                    }}
                     required
                     className="border border-gray-300 h-[38px] w-full pl-10 pr-3 outline-none text-sm"
                   />
@@ -161,27 +162,29 @@ export default function TambahMenu() {
                   <div className="relative mb-3">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">Rp</span>
                     <input
-                      type="number"
-                      min="0"
-                      value={hargaPanas}
-                      onChange={(e) => setHargaPanas(e.target.value < 0 ? 0 : e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "-") e.preventDefault(); }}
-                      required
-                      className="border border-gray-300 h-[38px] w-full pl-10 pr-3 outline-none text-sm"
-                    />
+                    type="text"
+                    value={hargaPanas}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      setHargaPanas(value);
+                    }}
+                    required
+                    className="border border-gray-300 h-[38px] w-full pl-10 pr-3 outline-none text-sm"
+                  />
                   </div>
                   <p className="text-xs md:text-sm mb-1">Dingin</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">Rp</span>
                     <input
-                      type="number"
-                      min="0"
-                      value={hargaDingin}
-                      onChange={(e) => setHargaDingin(e.target.value < 0 ? 0 : e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "-") e.preventDefault(); }}
-                      required
-                      className="border border-gray-300 h-[38px] w-full pl-10 pr-3 outline-none text-sm"
-                    />
+                    type="text"
+                    value={hargaDingin}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      setHargaDingin(value);
+                    }}
+                    required
+                    className="border border-gray-300 h-[38px] w-full pl-10 pr-3 outline-none text-sm"
+                  />
                   </div>
                 </div>
               </div>

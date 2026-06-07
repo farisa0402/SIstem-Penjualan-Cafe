@@ -144,6 +144,8 @@ export default function TambahMenu() {
                     type="number"
                     min="0"
                     value={hargaMakanan}
+                    onChange={(e) => setHargaMakanan(e.target.value < 0 ? 0 : e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "-") e.preventDefault(); }}
                     required
                     className="border border-gray-300 h-[38px] w-full pl-10 pr-3 outline-none text-sm"
                   />

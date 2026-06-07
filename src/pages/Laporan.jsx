@@ -296,7 +296,7 @@ export default function Laporan() {
       );
 
       doc.text(
-        "Telp: 082259530644 | Email: Mesombang02@gmail.com",
+        "Telp: 082259530644 | Email: Mesombang2@gmail.com",
         105,
         28,
         { align: "center" }
@@ -694,7 +694,7 @@ export default function Laporan() {
                           />
                           {/* Label rupiah sejajar persis dengan garis grid */}
                           <text
-                            x={chartLeft - 8}
+                            x={chartLeft - 35}
                             y={y + 4}
                             textAnchor="end"
                             fontSize="11"

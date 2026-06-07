@@ -1,148 +1,181 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Background from "../assets/MacBook Air - 9.png";
+import { supabase } from "../database/supabase";
 
 export default function LupaSandi() {
+
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const [email, setEmail] =
+    useState("");
 
-    alert("Link reset kata sandi telah dikirim ke email");
-  };
+  const [message, setMessage] =
+    useState({
+      text: "",
+      isError: false,
+    });
+
+  const [loading, setLoading] =
+    useState(false);
+
+  // =========================================================
+  // HANDLE RESET PASSWORD
+  // =========================================================
+  const handleResetRequest =
+    async (e) => {
+
+      e.preventDefault();
+
+      if (!email.trim()) {
+
+        setMessage({
+          text:
+            "Email harus diisi!",
+          isError: true,
+        });
+
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+
+        // =========================================================
+        // KIRIM EMAIL RESET PASSWORD
+        // =========================================================
+        const { error } =
+          await supabase.auth.resetPasswordForEmail(
+            email,
+            {
+              redirectTo:
+                "http://localhost:5173/ubahsandi",
+            }
+          );
+
+        if (error)
+          throw error;
+
+        setMessage({
+          text:
+            "Link reset password berhasil dikirim ke email!",
+          isError: false,
+        });
+
+        setEmail("");
+
+      } catch (err) {
+
+        console.log(err);
+
+        setMessage({
+          text:
+            err.message,
+          isError: true,
+        });
+
+      } finally {
+
+        setLoading(false);
+
+      }
+    };
 
   return (
     <div
-      className="
-        min-h-screen
-        w-full
-        bg-cover
-        bg-center
-        flex
-        items-center
-        justify-center
-        relative
-        px-4
-        py-8
-      "
-      style={{ backgroundImage: `url(${Background})` }}
+      className="min-h-screen w-full bg-cover bg-center flex items-center justify-center relative px-4 py-8"
+      style={{
+        backgroundImage:
+          `url(${Background})`,
+      }}
     >
-      {/* overlay */}
-      <div className="absolute inset-0 bg-[#3b1f1a]/70"></div>
 
-      {/* card */}
-      <div
-        className="
-          relative z-10
-          w-full
-          max-w-md md:max-w-xl
-          bg-white/30
-          backdrop-blur-md
-          rounded-3xl
-          shadow-2xl
-          px-6 py-8
-          sm:px-8 sm:py-10
-          md:px-10 md:py-12
-        "
-      >
-        {/* title */}
-        <h1
-          className="
-            text-white
-            text-3xl sm:text-4xl md:text-5xl
-            font-abhaya
-            font-bold
-            text-center
-            mb-4
-          "
-        >
-          Lupa Sandi
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/20"></div>
+
+      {/* Card */}
+      <div className="relative z-10 w-full max-w-xl bg-white/15 backdrop-blur-md rounded-[32px] shadow-2xl px-10 py-12 md:px-14 md:py-16 border border-white/10">
+
+        {/* Judul */}
+        <h1 className="text-white text-4xl md:text-5xl font-serif text-center mb-6 tracking-wide">
+          Mesombang Cafe
         </h1>
 
-        {/* deskripsi */}
-        <p
-          className="
-            text-white/90
-            text-center
-            text-sm md:text-base
-            mb-8
-          "
-        >
-          Masukkan email akun anda untuk menerima
-          link reset kata sandi
-        </p>
+        {/* Sub Judul */}
+        <h2 className="text-white text-lg font-semibold text-center mb-6">
+          Lupa Kata Sandi?
+        </h2>
 
-        {/* form */}
+        {/* Message */}
+        {message.text && (
+          <div
+            className={`text-white text-sm text-center p-3 rounded-xl mb-5 ${message.isError
+              ? "bg-red-500"
+              : "bg-green-500"
+              }`}
+          >
+            {message.text}
+          </div>
+        )}
+
+        {/* Form */}
         <form
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleResetRequest
+          }
           className="space-y-6"
         >
-          {/* email */}
+
+          {/* Email */}
           <div>
-            <label
-              className="
-                block
-                text-white
-                text-sm md:text-base
-                font-semibold
-                mb-2
-              "
-            >
+
+            <label className="block text-white text-sm font-semibold mb-2">
               Email
             </label>
 
             <input
               type="email"
               placeholder="Masukkan email"
-              className="
-                w-full
-                h-11 md:h-12
-                rounded-xl
-                px-4
-                outline-none
-                bg-white
-                text-black
-                text-sm md:text-base
-              "
+              value={email}
+              onChange={(e) =>
+                setEmail(
+                  e.target.value
+                )
+              }
+              disabled={loading}
+              className="w-full h-12 rounded-xl px-4 outline-none bg-white text-black"
             />
+
           </div>
 
-          {/* tombol kirim */}
+          {/* Button */}
           <button
             type="submit"
-            className="
-              w-full
-              h-11 md:h-12
-              rounded-xl
-              bg-[#5c322b]
-              hover:bg-[#44231e]
-              transition
-              text-white
-              text-lg md:text-xl
-              font-semibold
-              shadow-lg
-            "
+            disabled={loading}
+            className="w-full h-12 rounded-xl bg-[#4a2b26] hover:bg-[#3b211d] text-white font-semibold transition"
           >
-            Kirim Link Reset
+            {loading
+              ? "Memproses..."
+              : "Kirim Link Reset"}
           </button>
-        </form>
 
-        {/* kembali */}
-        <div
-          className="
-            mt-6
-            text-center
-            text-white
-            text-sm
-          "
-        >
-          Ingat kata sandi?{" "}
-          <button
-            onClick={() => navigate("/login")}
-            className="font-semibold hover:underline"
-          >
-            Masuk
-          </button>
-        </div>
+          {/* Back */}
+          <div className="text-center">
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/login")
+              }
+              className="text-white text-sm hover:underline"
+            >
+              Kembali ke Login
+            </button>
+
+          </div>
+
+        </form>
       </div>
     </div>
   );

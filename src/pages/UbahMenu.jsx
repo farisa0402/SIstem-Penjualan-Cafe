@@ -1,458 +1,424 @@
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { supabase } from "../database/supabase";
 
-function UbahMenu() {
-
+export default function UbahMenu() {
   const navigate = useNavigate();
+  const { id } = useParams(); // Mengambil ID Menu dari URL parameter
 
-  /* DATA DEFAULT */
-  const [namaMenu, setNamaMenu] = useState("Kopi Susu");
-  const [harga, setHarga] = useState("12000");
+  // STATE FORM DATA (Sama seperti TambahMenu)
+  const [namaMenu, setNamaMenu] = useState("");
+  const [kategori, setKategori] = useState("1"); // "1" Makanan, "2" Minuman
+
+  const [hargaMakanan, setHargaMakanan] = useState("");
+  const [hargaDingin, setHargaDingin] = useState("");
+  const [hargaPanas, setHargaPanas] = useState("");
 
   // STATE GAMBAR
-  const [preview, setPreview] = useState(null);
+  const [gambar, setGambar] = useState(null); // File gambar baru jika diunggah
+  const [gambarPreview, setGambarPreview] = useState(""); // URL untuk preview gambar lama/baru
+  const [loading, setLoading] = useState(false);
 
-  // HANDLE GANTI GAMBAR
-  const handleImage = (e) => {
+  // 1. FETCH DATA SEBELUMNYA BERDASARKAN ID SAAT HALAMAN DIBUKA
+  useEffect(() => {
+    const fetchMenuData = async () => {
+      if (!id) return;
+      try {
+        const { data, error } = await supabase
+          .from("Menu")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setNamaMenu(data.nama_menu || "");
+          setKategori(String(data.Id_kategori || "1"));
+          setGambarPreview(data.gambar || ""); // Menyimpan URL gambar lama untuk preview
+
+          // Mengisi state harga berdasarkan kategori terdata
+          if (String(data.Id_kategori) === "1") {
+            setHargaMakanan(data.harga_makanan || "");
+          } else {
+            setHargaDingin(data.harga_dingin || "");
+            setHargaPanas(data.harga_panas || "");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("Gagal memuat data menu.");
+        navigate("/dashboard/menu");
+      }
+    };
+
+    fetchMenuData();
+  }, [id, navigate]);
+
+  // HANDLE VALIDASI DAN PERUBAHAN GAMBAR (Sama seperti TambahMenu)
+  const handleImageChange = (e) => {
     const file = e.target.files[0];
-
     if (file) {
-      setPreview(URL.createObjectURL(file));
+      if (file.size > 2097152) {
+        alert("Ukuran file terlalu besar! Maksimal adalah 2MB.");
+        e.target.value = ""; // Reset input file
+        return;
+      }
+      setGambar(file);
+      setGambarPreview(URL.createObjectURL(file)); // Buat preview lokal instan
+    }
+  };
+
+  // 2. PROSES UPDATE DATA KE SUPABASE
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      setLoading(true);
+      let imageUrl = gambarPreview; // Default menggunakan URL gambar lama jika tidak diganti
+
+      // Jika user mengunggah file gambar baru, lakukan proses upload ke bucket 'menu-gambar'
+      if (gambar) {
+        const fileExt = gambar.name.split(".").pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("menu-gambar") // SUDAH DISINKRONKAN DENGAN BUCKET ANDA
+          .upload(fileName, gambar, {
+            cacheControl: "3600",
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error("Upload Error Details:", uploadError);
+          alert(`Gagal unggah gambar baru: ${uploadError.message}`);
+          setLoading(false);
+          return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("menu-gambar")
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      // UPDATE DATA KE DATABASE (Menyesuaikan kolom database dari ERD)
+      const { error } = await supabase
+        .from("Menu")
+        .update({
+          nama_menu: namaMenu,
+          Id_kategori: Number(kategori),
+          harga_makanan: kategori === "1" ? Number(hargaMakanan) : null,
+          harga_dingin: kategori === "2" ? Number(hargaDingin) : null,
+          harga_panas: kategori === "2" ? Number(hargaPanas) : null,
+          gambar: imageUrl,
+        })
+        .eq("id", id);
+
+      if (error) {
+        console.error("Database Update Error:", error);
+        alert(`Gagal memperbarui database: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+
+      alert("Menu berhasil diperbarui");
+      navigate("/dashboard/menu");
+    } catch (err) {
+      console.error("Catch Error:", err);
+      alert("Terjadi kesalahan sistem.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      {/* OVERLAY */}
+    <div
+      className="
+        fixed
+        inset-0
+        bg-black/40
+        flex
+        justify-center
+        items-center
+        z-50
+        p-4
+      "
+    >
+      {/* MODAL CONTAINER */}
       <div
         className="
-          fixed inset-0
-          bg-black/20
-          backdrop-blur-[3px]
-          z-40
-        "
-      />
-
-      {/* MODAL */}
-      <div
-        className="
-          fixed inset-0
-          z-50
-          flex
-          items-center
-          justify-center
-          p-3 md:p-6
-        "
+        bg-white
+        w-full
+        max-w-[650px]
+        rounded-md
+        relative
+        shadow-xl
+        px-4
+        sm:px-6
+        md:px-10
+        py-6
+        md:py-8
+        max-h-[90vh]
+        overflow-y-auto
+      "
       >
-
-        <div
-          className="
-            relative
-            w-full
-            max-w-2xl
-            bg-[#f4f1ee]
-            rounded-2xl
-            shadow-2xl
-            overflow-y-auto
-            max-h-[95vh]
-          "
+        {/* CLOSE BUTTON */}
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard/menu")}
+          className="absolute top-4 right-4"
         >
+          <X size={20} />
+        </button>
 
-          {/* CLOSE */}
-          <button
-            onClick={() => navigate("/dashboard/menu")}
-            className="
-              absolute
-              top-4
-              right-4
-              text-[#4b2a24]
-              hover:opacity-70
-              transition
-            "
-          >
-            <X size={22} />
-          </button>
+        {/* TITLE */}
+        <h1
+          className="
+          text-center
+          text-2xl
+          md:text-[34px]
+          font-bold
+          text-[#4B2E2B]
+          mb-8
+          md:mb-10
+        "
+        >
+          Ubah Menu
+        </h1>
 
-          {/* TITLE */}
-          <div className="pt-8 md:pt-10 text-center">
+        {/* FORM */}
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-5">
 
-            <h1
-              className="
-                text-2xl
-                md:text-4xl
-                font-bold
-                text-[#4b2a24]
-              "
-            >
-              Ubah Menu
-            </h1>
-
-          </div>
-
-          {/* FORM */}
-          <div
-            className="
-              px-5
-              md:px-14
-              py-8
-              md:py-10
-            "
-          >
-
-            <div className="space-y-6">
-
-              {/* NAMA MENU */}
-              <div
+            {/* NAMA MENU */}
+            <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-3 md:gap-5">
+              <label className="text-[17px] font-semibold text-[#4B2E2B]">
+                Nama Menu
+              </label>
+              <input
+                type="text"
+                value={namaMenu}
+                onChange={(e) => setNamaMenu(e.target.value)}
+                required
                 className="
-                  flex
-                  flex-col
-                  md:flex-row
-                  md:items-center
-                  gap-3 md:gap-5
+                  border
+                  border-gray-300
+                  h-[38px]
+                  px-3
+                  outline-none
+                  text-sm
                 "
-              >
+              />
+            </div>
 
-                <label
-                  className="
-                    md:w-44
-                    text-sm
-                    md:text-base
-                    font-semibold
-                    text-[#4b2a24]
-                  "
-                >
-                  Nama Menu
-                </label>
+            {/* KATEGORI */}
+            <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] gap-3 md:gap-5">
+              <label className="text-[17px] font-semibold text-[#4B2E2B] pt-2">
+                Kategori
+              </label>
 
-                <input
-                  type="text"
-                  value={namaMenu}
-                  onChange={(e) =>
-                    setNamaMenu(e.target.value)
-                  }
-                  className="
-                    flex-1
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setKategori("1")}
+                  className={`
+                    w-full
                     border
-                    border-gray-300
-                    bg-white
-                    px-4
-                    py-2.5
-                    rounded-md
-                    outline-none
+                    text-left
+                    px-3
+                    h-[38px]
                     text-sm
-                    md:text-base
-                    focus:ring-2
-                    focus:ring-[#5c3a32]
-                  "
-                />
-
-              </div>
-
-              {/* HARGA */}
-              <div
-                className="
-                  flex
-                  flex-col
-                  md:flex-row
-                  md:items-center
-                  gap-3 md:gap-5
-                "
-              >
-
-                <label
-                  className="
-                    md:w-44
-                    text-sm
-                    md:text-base
-                    font-semibold
-                    text-[#4b2a24]
-                  "
+                    ${kategori === "1"
+                      ? "bg-[#F3ECE5] border-[#4B2E2B]"
+                      : "border-gray-300"
+                    }
+                  `}
                 >
-                  Harga
+                  Makanan
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setKategori("2")}
+                  className={`
+                    w-full
+                    border
+                    text-left
+                    px-3
+                    h-[38px]
+                    text-sm
+                    ${kategori === "2"
+                      ? "bg-[#F3ECE5] border-[#4B2E2B]"
+                      : "border-gray-300"
+                    }
+                  `}
+                >
+                  Minuman
+                </button>
+              </div>
+            </div>
+
+            {/* HARGA MAKANAN */}
+            {kategori === "1" && (
+              <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-3 md:gap-5">
+                <label className="text-[17px] font-semibold text-[#4B2E2B]">
+                  Harga Makanan
                 </label>
 
-                <div className="relative w-full">
-
-                  <span
-                    className="
-                      absolute
-                      left-4
-                      top-1/2
-                      -translate-y-1/2
-                      text-gray-500
-                      text-sm
-                    "
-                  >
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
                     Rp
                   </span>
-
                   <input
-                    type="text"
-                    value={harga}
-                    onChange={(e) =>
-                      setHarga(e.target.value)
-                    }
-                    placeholder="Masukkan harga"
+                    type="number"
+                    min="0"
+                    value={hargaMakanan}
+                    onChange={(e) => setHargaMakanan(e.target.value)}
+                    required={kategori === "1"}
                     className="
-                      w-full
                       border
                       border-gray-300
-                      bg-white
-                      pl-12
-                      pr-4
-                      py-2.5
-                      rounded-md
+                      h-[38px]
+                      w-full
+                      pl-10
+                      pr-3
                       outline-none
                       text-sm
-                      md:text-base
-                      focus:ring-2
-                      focus:ring-[#5c3a32]
                     "
                   />
-
                 </div>
-
               </div>
+            )}
 
-              {/* GANTI GAMBAR */}
-              <div
-                className="
-                  flex
-                  flex-col
-                  md:flex-row
-                  gap-3 md:gap-5
-                "
-              >
-
-                <label
-                  className="
-                    md:w-44
-                    text-sm
-                    md:text-base
-                    font-semibold
-                    text-[#4b2a24]
-                  "
-                >
-                  Gambar
+            {/* HARGA MINUMAN */}
+            {kategori === "2" && (
+              <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] gap-3 md:gap-5">
+                <label className="text-[17px] font-semibold text-[#4B2E2B] pt-2">
+                  Harga Minuman
                 </label>
 
-                <div className="flex-1">
-
-                  <label
-                    className="
-                      border
-                      border-gray-300
-                      bg-gray-200
-                      rounded-xl
-                      h-44
-                      md:h-52
-                      w-full
-                      flex
-                      items-center
-                      justify-center
-                      cursor-pointer
-                      overflow-hidden
-                      hover:bg-gray-300
-                      transition
-                    "
-                  >
-
-                    {preview ? (
-                      <img
-                        src={preview}
-                        alt="preview"
-                        className="
-                          w-full
-                          h-full
-                          object-cover
-                        "
-                      />
-                    ) : (
-                      <div className="text-center px-3">
-
-                        <p
-                          className="
-                            text-[#4b2a24]
-                            text-sm
-                            md:text-base
-                            font-medium
-                          "
-                        >
-                          Klik untuk ganti gambar
-                        </p>
-
-                        <p
-                          className="
-                            text-xs
-                            text-gray-600
-                            mt-1
-                          "
-                        >
-                          Format JPG, PNG (maks 2MB)
-                        </p>
-
-                      </div>
-                    )}
-
+                <div>
+                  <p className="text-sm mb-1">Panas</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                      Rp
+                    </span>
                     <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImage}
+                      type="number"
+                      min="0"
+                      value={hargaPanas}
+                      onChange={(e) => setHargaPanas(e.target.value)}
+                      required={kategori === "2"}
+                      className="
+                        border
+                        border-gray-300
+                        h-[38px]
+                        w-full
+                        pl-10
+                        pr-3
+                        outline-none
+                        text-sm
+                      "
                     />
+                  </div>
 
-                  </label>
-
+                  <p className="text-sm mt-3 mb-1">Dingin</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                      Rp
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={hargaDingin}
+                      onChange={(e) => setHargaDingin(e.target.value)}
+                      required={kategori === "2"}
+                      className="
+                        border
+                        border-gray-300
+                        h-[38px]
+                        w-full
+                        pl-10
+                        pr-3
+                        outline-none
+                        text-sm
+                      "
+                    />
+                  </div>
                 </div>
-
               </div>
+            )}
 
-              {/* PREVIEW */}
-              <div
+            {/* GAMBAR */}
+            <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] gap-3 md:gap-5">
+              <div className="hidden md:block"></div>
+              <label
                 className="
-                  bg-[#ebe6e1]
-                  rounded-2xl
-                  p-4 md:p-5
                   border
-                "
-              >
-
-                <h3
-                  className="
-                    text-sm
-                    md:text-base
-                    font-semibold
-                    text-[#4b2a24]
-                    mb-4
-                  "
-                >
-                  Preview Menu
-                </h3>
-
-                <div
-                  className="
-                    bg-white
-                    rounded-2xl
-                    p-4
-                    shadow-sm
-                  "
-                >
-
-                  {/* IMAGE */}
-                  {preview ? (
-                    <img
-                      src={preview}
-                      alt="preview"
-                      className="
-                        w-full
-                        h-40
-                        md:h-52
-                        object-cover
-                        rounded-xl
-                        mb-4
-                      "
-                    />
-                  ) : (
-                    <div
-                      className="
-                        w-full
-                        h-40
-                        md:h-52
-                        bg-gray-300
-                        rounded-xl
-                        mb-4
-                      "
-                    />
-                  )}
-
-                  {/* NAMA */}
-                  <h2
-                    className="
-                      text-lg
-                      md:text-xl
-                      font-semibold
-                      text-[#3b1f1a]
-                    "
-                  >
-                    {namaMenu || "Nama menu"}
-                  </h2>
-
-                  {/* HARGA */}
-                  <p
-                    className="
-                      text-gray-500
-                      mt-1
-                      text-sm
-                      md:text-base
-                    "
-                  >
-                    Rp {harga || "0"}
-                  </p>
-
-                </div>
-
-              </div>
-
-              {/* BUTTON */}
-              <div
-                className="
+                  border-gray-300
+                  bg-[#D9D9D9]
+                  h-[120px]
                   flex
-                  justify-end
-                  gap-3
-                  pt-4
+                  flex-col
+                  justify-center
+                  items-center
+                  text-center
+                  cursor-pointer
+                  overflow-hidden
                 "
               >
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
 
-                <button
-                  onClick={() =>
-                    navigate("/dashboard/menu")
-                  }
-                  className="
-                    px-5
-                    md:px-6
-                    py-2
-                    rounded-md
-                    border
-                    border-gray-400
-                    bg-white
-                    hover:bg-gray-100
-                    text-sm
-                    md:text-base
-                    transition
-                  "
-                >
-                  Batal
-                </button>
-
-                <button
-                  className="
-                    px-5
-                    md:px-6
-                    py-2
-                    rounded-md
-                    bg-[#5c3a32]
-                    hover:bg-[#3b1f1a]
-                    text-white
-                    text-sm
-                    md:text-base
-                    transition
-                  "
-                >
-                  Simpan Perubahan
-                </button>
-
-              </div>
-
+                {gambarPreview ? (
+                  <img
+                    src={gambarPreview}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-[#4B2E2B]">
+                      Klik untuk ubah gambar
+                    </p>
+                    <p className="text-[11px] text-gray-600 mt-1">
+                      Format JPG, PNG (Maks 2MB)
+                    </p>
+                  </>
+                )}
+              </label>
             </div>
 
           </div>
 
-        </div>
+          {/* ACTION BUTTONS */}
+          <div className="flex flex-col-reverse md:flex-row justify-end gap-3 mt-8">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => navigate("/dashboard/menu")}
+              className="border border-gray-400 px-5 py-2 text-sm bg-white disabled:opacity-50 w-full md:w-auto"
+            >
+              Batal
+            </button>
 
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-[#4B2E2B] text-white px-5 py-2 text-sm disabled:opacity-50 w-full md:w-auto"
+            >
+              {loading ? "Menyimpan..." : "Simpan Perubahan"}
+            </button>
+          </div>
+        </form>
       </div>
-    </>
+    </div>
   );
 }
-
-export default UbahMenu;

@@ -1,26 +1,56 @@
+import { useEffect, useState } from "react";
 import { Search, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const stokData = [
-  {
-    nama: "Kopi Hitam",
-    stok: 10,
-    status: "Tersedia",
-  },
-  {
-    nama: "Americano",
-    stok: 5,
-    status: "Tersedia",
-  },
-  {
-    nama: "Thai Tea",
-    stok: 0,
-    status: "Habis",
-  },
-];
+import { supabase } from "../database/supabase";
 
 function Stok() {
+
+  // STATE
+  const [stokData, setStokData] = useState([]);
+  const [search, setSearch] = useState("");
+
+  // GET DATA
+  useEffect(() => {
+    getStok();
+  }, []);
+
+  // GET STOK
+  async function getStok() {
+
+    const { data, error } = await supabase
+      .from("Stok")
+      .select(`
+        *,
+        Status_Stok (
+          id,
+          status
+        )
+      `)
+      .order("id", { ascending: false });
+
+    if (error) {
+
+      console.log("ERROR :", error);
+
+    } else {
+
+      console.log("DATA STOK :", data);
+
+      setStokData(data || []);
+
+    }
+
+  }
+
+  // FILTER SEARCH
+  const filteredData = stokData.filter((item) =>
+    (item.nama_menu || "")
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
   return (
+
     <div className="px-4 md:px-8 py-6">
 
       {/* TITLE */}
@@ -66,6 +96,10 @@ function Stok() {
           <input
             type="text"
             placeholder="Cari menu..."
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
             className="
               w-full
               pl-10
@@ -117,98 +151,119 @@ function Stok() {
       {/* MOBILE CARD */}
       <div className="md:hidden space-y-4">
 
-        {stokData.map((item, index) => (
-          <div
-            key={index}
-            className="
-              bg-[#f4f1ee]
-              rounded-2xl
-              p-5
-              shadow-sm
-              border
-              border-[#ebe6e1]
-            "
-          >
+        {filteredData.length > 0 ? (
 
-            {/* NAMA */}
-            <div className="mb-4">
+          filteredData.map((item) => {
 
-              <p className="text-xs text-gray-500 mb-1">
-                Nama Menu
-              </p>
+            // STATUS DARI STOK
+            const status =
+              Number(item.jumlah) > 0
+                ? "Tersedia"
+                : "Habis";
 
-              <h3
+            return (
+
+              <div
+                key={item.id}
                 className="
-                  text-base
-                  font-semibold
-                  text-[#3b1f1a]
+                  bg-[#f4f1ee]
+                  rounded-2xl
+                  p-5
+                  shadow-sm
+                  border
+                  border-[#ebe6e1]
                 "
               >
-                {item.nama}
-              </h3>
 
-            </div>
+                {/* NAMA */}
+                <div className="mb-4">
 
-            {/* STOK + STATUS */}
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-              "
-            >
+                  <p className="text-xs text-gray-500 mb-1">
+                    Nama Menu
+                  </p>
 
-              {/* STOK */}
-              <div>
+                  <h3
+                    className="
+                      text-base
+                      font-semibold
+                      text-[#3b1f1a]
+                    "
+                  >
+                    {item.nama_menu}
+                  </h3>
 
-                <p className="text-xs text-gray-500 mb-1">
-                  Stok
-                </p>
+                </div>
 
-                <p
+                {/* STOK + STATUS */}
+                <div
                   className="
-                    text-sm
-                    font-semibold
-                    text-[#3b1f1a]
+                    flex
+                    items-center
+                    justify-between
                   "
                 >
-                  {item.stok}
-                </p>
+
+                  {/* STOK */}
+                  <div>
+
+                    <p className="text-xs text-gray-500 mb-1">
+                      Stok
+                    </p>
+
+                    <p
+                      className="
+                        text-sm
+                        font-semibold
+                        text-[#3b1f1a]
+                      "
+                    >
+                      {item.jumlah}
+                    </p>
+
+                  </div>
+
+                  {/* STATUS */}
+                  <div className="text-right">
+
+                    <p className="text-xs text-gray-500 mb-2">
+                      Status
+                    </p>
+
+                    <span
+                      className={`
+                        inline-block
+                        px-3
+                        py-1
+                        rounded-full
+                        text-xs
+                        font-medium
+                        text-white
+                        ${status === "Tersedia"
+                          ? "bg-green-500"
+                          : "bg-red-500"
+                        }
+                      `}
+                    >
+                      {status}
+                    </span>
+
+                  </div>
+
+                </div>
 
               </div>
 
-              {/* STATUS */}
-              <div className="text-right">
+            );
 
-                <p className="text-xs text-gray-500 mb-2">
-                  Status
-                </p>
+          })
 
-                <span
-                  className={`
-                    inline-block
-                    px-3
-                    py-1
-                    rounded-full
-                    text-xs
-                    font-medium
-                    text-white
-                    ${
-                      item.status === "Tersedia"
-                        ? "bg-green-500"
-                        : "bg-red-500"
-                    }
-                  `}
-                >
-                  {item.status}
-                </span>
+        ) : (
 
-              </div>
-
-            </div>
-
+          <div className="text-center text-gray-500 py-10">
+            Data stok belum ada
           </div>
-        ))}
+
+        )}
 
       </div>
 
@@ -283,69 +338,101 @@ function Stok() {
             {/* BODY */}
             <tbody>
 
-              {stokData.map((item, index) => (
-                <tr
-                  key={index}
-                  className="
-                    border-t
-                    border-[#ebe6e1]
-                    hover:bg-[#efebe7]
-                    transition
-                  "
-                >
+              {filteredData.length > 0 ? (
 
-                  {/* NAMA */}
-                  <td
-                    className="
-                      px-8
-                      py-5
-                      text-sm
-                      font-medium
-                      text-[#3b1f1a]
-                    "
-                  >
-                    {item.nama}
-                  </td>
+                filteredData.map((item) => {
 
-                  {/* STOK */}
-                  <td
-                    className="
-                      px-8
-                      py-5
-                      text-center
-                      text-sm
-                      text-[#3b1f1a]
-                    "
-                  >
-                    {item.stok}
-                  </td>
+                  // STATUS DARI STOK
+                  const status =
+                    Number(item.jumlah) > 0
+                      ? "Tersedia"
+                      : "Habis";
 
-                  {/* STATUS */}
-                  <td className="px-8 py-5 text-center">
+                  return (
 
-                    <span
-                      className={`
-                        inline-block
-                        px-4
-                        py-1.5
-                        rounded-full
-                        text-xs
-                        font-medium
-                        text-white
-                        ${
-                          item.status === "Tersedia"
-                            ? "bg-green-500"
-                            : "bg-red-500"
-                        }
-                      `}
+                    <tr
+                      key={item.id}
+                      className="
+                        border-t
+                        border-[#ebe6e1]
+                        hover:bg-[#efebe7]
+                        transition
+                      "
                     >
-                      {item.status}
-                    </span>
 
+                      {/* NAMA */}
+                      <td
+                        className="
+                          px-8
+                          py-5
+                          text-sm
+                          font-medium
+                          text-[#3b1f1a]
+                        "
+                      >
+                        {item.nama_menu}
+                      </td>
+
+                      {/* STOK */}
+                      <td
+                        className="
+                          px-8
+                          py-5
+                          text-center
+                          text-sm
+                          text-[#3b1f1a]
+                        "
+                      >
+                        {item.jumlah}
+                      </td>
+
+                      {/* STATUS */}
+                      <td className="px-8 py-5 text-center">
+
+                        <span
+                          className={`
+                            inline-block
+                            px-4
+                            py-1.5
+                            rounded-full
+                            text-xs
+                            font-medium
+                            text-white
+                            ${status === "Tersedia"
+                              ? "bg-green-500"
+                              : "bg-red-500"
+                            }
+                          `}
+                        >
+                          {status}
+                        </span>
+
+                      </td>
+
+                    </tr>
+
+                  );
+
+                })
+
+              ) : (
+
+                <tr>
+
+                  <td
+                    colSpan="3"
+                    className="
+                      text-center
+                      py-10
+                      text-gray-500
+                    "
+                  >
+                    Data stok belum ada
                   </td>
 
                 </tr>
-              ))}
+
+              )}
 
             </tbody>
 
@@ -356,7 +443,9 @@ function Stok() {
       </div>
 
     </div>
+
   );
+
 }
 
 export default Stok;

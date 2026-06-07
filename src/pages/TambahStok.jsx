@@ -1,7 +1,120 @@
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../database/supabase";
 
 function TambahStok() {
+
+  const navigate = useNavigate();
+
+  // STATE
+  const [menuData, setMenuData] = useState([]);
+
+  const [nama, setNama] = useState("");
+  const [stok, setStok] = useState("");
+
+  // GET MENU
+  useEffect(() => {
+    getMenu();
+  }, []);
+
+  async function getMenu() {
+
+    const { data, error } = await supabase
+      .from("Menu")
+      .select("nama_menu")
+      .order("nama_menu", { ascending: true });
+
+    if (error) {
+
+      console.log(error);
+
+    } else {
+
+      setMenuData(data || []);
+
+    }
+
+  }
+
+  // SIMPAN DATA
+  async function handleSubmit(e) {
+
+    e.preventDefault();
+
+    // STATUS
+    // 1 = Tersedia
+    // 2 = Habis
+    const idStatus =
+      Number(stok) > 0 ? 1 : 2;
+
+    // CEK APAKAH MENU SUDAH ADA DI STOK
+    const { data: cekData } = await supabase
+      .from("Stok")
+      .select("*")
+      .eq("nama_menu", nama)
+      .single();
+
+    // JIKA SUDAH ADA → UPDATE STOK
+    if (cekData) {
+
+      const totalStok =
+        Number(cekData.jumlah) + Number(stok);
+
+      const statusBaru =
+        totalStok > 0 ? 1 : 2;
+
+      const { error } = await supabase
+        .from("Stok")
+        .update({
+          jumlah: totalStok,
+          id_status: statusBaru,
+        })
+        .eq("id", cekData.id);
+
+      if (error) {
+
+        console.log(error);
+        alert("Gagal update stok");
+
+      } else {
+
+        alert("Stok berhasil ditambahkan");
+        navigate("/dashboard/stok");
+
+      }
+
+    }
+
+    // JIKA BELUM ADA → INSERT DATA BARU
+    else {
+
+      const { error } = await supabase
+        .from("Stok")
+        .insert([
+          {
+            nama_menu: nama,
+            jumlah: Number(stok),
+            id_status: idStatus,
+          },
+        ]);
+
+      if (error) {
+
+        console.log(error);
+        alert("Gagal menambahkan stok");
+
+      } else {
+
+        alert("Stok berhasil ditambahkan");
+        navigate("/dashboard/stok");
+
+      }
+
+    }
+
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4 py-6">
 
@@ -25,7 +138,10 @@ function TambahStok() {
           </h1>
 
           {/* FORM */}
-          <div className="space-y-7">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-7"
+          >
 
             {/* NAMA MENU */}
             <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-8">
@@ -34,9 +150,12 @@ function TambahStok() {
                 Nama Menu
               </label>
 
-              <input
-                type="text"
-                placeholder="Masukkan nama menu"
+              <select
+                value={nama}
+                onChange={(e) =>
+                  setNama(e.target.value)
+                }
+                required
                 className="
                   flex-1
                   border
@@ -46,8 +165,24 @@ function TambahStok() {
                   py-2
                   outline-none
                   focus:border-[#5c3a32]
+                  bg-white
                 "
-              />
+              >
+
+                <option value="">
+                  Pilih menu
+                </option>
+
+                {menuData.map((item, index) => (
+                  <option
+                    key={index}
+                    value={item.nama_menu}
+                  >
+                    {item.nama_menu}
+                  </option>
+                ))}
+
+              </select>
 
             </div>
 
@@ -60,7 +195,13 @@ function TambahStok() {
 
               <input
                 type="number"
+                min="0"
                 placeholder="Masukkan jumlah stok"
+                value={stok}
+                onChange={(e) =>
+                  setStok(e.target.value)
+                }
+                required
                 className="
                   flex-1
                   border
@@ -75,42 +216,42 @@ function TambahStok() {
 
             </div>
 
-           
+            {/* BUTTON */}
+            <div className="flex justify-end gap-3 mt-12">
 
-          </div>
+              <Link
+                to="/dashboard/stok"
+                className="
+                  px-5 py-2
+                  border
+                  rounded-md
+                  text-sm
+                  hover:bg-gray-100
+                "
+              >
+                Batal
+              </Link>
 
-          {/* BUTTON */}
-          <div className="flex justify-end gap-3 mt-12">
+              <button
+                type="submit"
+                className="
+                  px-5 py-2
+                  bg-[#5c3a32]
+                  text-white
+                  rounded-md
+                  text-sm
+                  hover:opacity-90
+                "
+              >
+                Simpan
+              </button>
 
-            <Link
-              to="/dashboard/stok"
-              className="
-                px-5 py-2
-                border
-                rounded-md
-                text-sm
-                hover:bg-gray-100
-              "
-            >
-              Batal
-            </Link>
+            </div>
 
-            <button
-              className="
-                px-5 py-2
-                bg-[#5c3a32]
-                text-white
-                rounded-md
-                text-sm
-                hover:opacity-90
-              "
-            >
-              Simpan
-            </button>
-
-          </div>
+          </form>
 
         </div>
+
       </div>
     </div>
   );

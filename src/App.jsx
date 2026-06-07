@@ -11,6 +11,9 @@ import TambahMenu from "./pages/TambahMenu";
 import UbahMenu from "./pages/UbahMenu";
 import TambahStok from "./pages/TambahStok";
 import UbahStok from "./pages/UbahStok";
+import UbahSandi from "./pages/UbahSandi";
+import DetailRiwayat from "./pages/DetailRiwayat";
+import Laporan from "./pages/Laporan";
 
 
 function App() {
@@ -19,6 +22,7 @@ function App() {
    <Route path="/" element={<LandingPage />}/>
    <Route path="/login" element={<Login />}/>
    <Route path="/lupasandi" element={<LupaSandi />}/>
+   <Route path="ubah-sandi" element={<UbahSandi />}/>
    <Route path="/dashboard" element={<MainLayout />}>
     <Route index element={<Dashboard />}/>
     <Route path="transaksi" element={<Transaksi />}/>
@@ -28,6 +32,8 @@ function App() {
     <Route path="ubah-menu" element={<UbahMenu />}/>
     <Route path="tambah-stok" element={<TambahStok />}/>
     <Route path="ubah-stok" element={<UbahStok />}/>
+    <Route path="detail-riwayat" element={<DetailRiwayat />}/>
+    <Route path="laporan" element={<Laporan />}/>
     </Route>
    </Routes>
   );

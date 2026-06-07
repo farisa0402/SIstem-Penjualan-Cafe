@@ -50,7 +50,7 @@ export default function LupaSandi() {
             email,
             {
               redirectTo:
-                "http://localhost:5173/ubahsandi",
+                "https://sistem-penjualan-cafe.vercel.app/ubahsandi",
             }
           );
 
